@@ -1,0 +1,9 @@
+{
+  "extends": ["@passportinc/eslint-config-passport", "prettier"],
+  "plugins": ["prettier"],
+  "rules": {
+    "prettier/prettier": "error",
+    "camelcase": 0,
+    "no-underscore-dangle": 0
+  }
+}

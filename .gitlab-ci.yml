@@ -1,0 +1,231 @@
+image: 549672058480.dkr.ecr.us-east-1.amazonaws.com/gitlab-runner:passport-ubuntu-latest
+
+stages:
+  - initialize
+  # - build
+  - test
+  - deploy
+  # - verify
+
+.shared_variables: &shared_variables
+  # @TODO UPDATE THIS FOR YOUR SERVICE
+  # This variable is used throughout this script.
+  SERVICE_NAME: CHANGE_ME
+
+.dev_variables: &dev_variables
+  <<: *shared_variables
+  RUNNER_PROFILE: gitlab-runner-dev
+  DEPLOY_TARGET: dev
+  AWS_DEFAULT_REGION: us-east-1
+
+.staging_variables: &staging_variables
+  <<: *shared_variables
+  RUNNER_PROFILE: gitlab-runner-staging
+  DEPLOY_TARGET: staging
+  AWS_DEFAULT_REGION: us-east-1
+
+.prod_us_variables: &prod_us_variables
+  <<: *shared_variables
+  RUNNER_PROFILE: gitlab-runner-prod
+  DEPLOY_TARGET: prod_us
+  AWS_DEFAULT_REGION: us-east-1
+
+.prod_ca_variables: &prod_ca_variables
+  <<: *shared_variables
+  RUNNER_PROFILE: gitlab-runner-prod
+  DEPLOY_TARGET: prod_ca
+  AWS_DEFAULT_REGION: ca-central-1
+
+.prod_uk_variables: &prod_uk_variables
+  <<: *shared_variables
+  RUNNER_PROFILE: gitlab-runner-prod
+  DEPLOY_TARGET: prod_uk
+  AWS_DEFAULT_REGION: eu-west-2
+
+# ---------------------------------------------------------------------------
+# Before Script:
+# This script is run before *every* pipeline job.
+# Perform common setup tasks like exporting commonly used variables here.
+# ---------------------------------------------------------------------------
+
+before_script:
+  - env | sort | grep -E '^CI_'
+  - aws --profile gitlab-runner-dev s3 sync --no-progress s3://passportlabs-mgmt-continuous-delivery/build-utils/master/ ${CI_PROJECT_DIR}/build-utils/
+  - chmod -R 0755 ${CI_PROJECT_DIR}/build-utils/scripts
+  - export PATH=${CI_PROJECT_DIR}/build-utils/scripts:${CI_PROJECT_DIR}/node_modules/.bin:${PATH}
+  - aws-mk-sts-profile.sh -t ${RUNNER_PROFILE} -n node
+  - export AWS_PROFILE=node
+  - aws sts get-caller-identity
+  - export SNYK_ORG=$(aws-ssm-get-parameter.sh --decrypt "/passport/shared/snyk-org")
+  - export SNYK_TOKEN=$(aws-ssm-get-parameter.sh --decrypt "/passport/shared/snyk-token")
+  - export NPM_TOKEN=$(aws-ssm-get-parameter.sh --decrypt "/passport/shared/npm-token-read")
+  - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ${CI_PROJECT_DIR}/.npmrc
+  - export NPM_CONFIG_USERCONFIG=${CI_PROJECT_DIR}/.npmrc
+  - if [ -f ~/.nvm/nvm.sh ] ; then source ~/.nvm/nvm.sh ; fi
+  - if [ -r .nvmrc ] ; then nvm use ; fi
+
+# ---------------------------------------------------------------------------
+# Initialize Section:
+# This will run npm install and potentially other tasks
+# - cache speeds up subsequent runs on the same job/branch
+# - artifacts pass data between pipeline stages
+# ---------------------------------------------------------------------------
+
+initialize:
+  stage: initialize
+  tags: [docker]
+  variables:
+    <<: *dev_variables
+  cache:
+    key: "${CI_JOB_NAME}-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - node_modules/
+  artifacts:
+    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - node_modules/
+      - package-lock.json
+    when: on_success
+  allow_failure: false
+  script: |
+    npm -v
+    npm install
+    npm dedupe
+
+# ---------------------------------------------------------------------------
+# Test Section:
+# This will likely be the stage w/ the most jobs and customization
+# This stage runs *pre-deployment* tests!
+# - unit tests (coverage)
+# - linting
+# - vulnerability (sast, dast, dependency scans, etc)
+# ---------------------------------------------------------------------------
+
+lint:
+  stage: test
+  tags: [docker]
+  variables:
+    <<: *dev_variables
+  dependencies:
+    - initialize
+  # allow_failure: true   # TEMPORARY
+  script: |
+    npm run lint
+
+coverage:
+  stage: test
+  tags: [docker]
+  variables:
+    <<: *dev_variables
+  dependencies:
+    - initialize
+  artifacts:
+    name: "$CI_JOB_NAME"
+    paths:
+      - coverage/
+  # allow_failure: true   # TEMPORARY
+  script: |
+    npm run test:cover
+
+# ---------------------------------------------------------------------------
+# Deploy Section:
+# - check dependencies at the beginning of the script
+# - deploy persistent resources (S3, DynamoDB, etc)
+# - deploy serverless functions
+# ---------------------------------------------------------------------------
+
+.deploy_template:
+  stage: deploy
+  tags: [docker]
+  dependencies:
+    - initialize
+  script: |
+    # terminate script on non-zero exit from any command
+    set -e
+
+    # check if our dependencies [at least] exist
+    aws cloudformation describe-stacks --stack-name "iam-common"
+    aws cloudformation describe-stacks --stack-name "infrastructure"
+    aws cloudformation describe-stacks --stack-name "apigateway-core"
+    aws-ssm-get-parameter.sh --exists "/passport/shared/npm-token-read"
+
+    # deploy persistent resources
+    set -x
+    aws cloudformation deploy --no-fail-on-empty-changeset \
+      --template-file ${CI_PROJECT_DIR}/cloudformation/${SERVICE_NAME}-resources.yml \
+      --stack-name ${SERVICE_NAME}-resources
+
+    # deploy serverless functions
+    sls deploy --target ${DEPLOY_TARGET} --region ${AWS_DEFAULT_REGION}
+
+deploy:dev:
+  extends: .deploy_template
+  environment: dev
+  variables: *dev_variables
+  only:
+    refs:
+      - branches
+    variables:
+      - $CI_BUILD_REF_NAME == "develop"
+  # comment this out for your repo
+  # it keeps boilerplate updates from automatically triggering deployments
+  when: manual
+
+deploy:staging:
+  extends: .deploy_template
+  environment: staging
+  variables: *staging_variables
+  only:
+    refs:
+      - branches
+    variables:
+      - $CI_BUILD_REF_NAME == "master"
+  # comment this out for your repo
+  # it keeps boilerplate updates from automatically triggering deployments
+  when: manual
+
+deploy:prod_us:
+  extends: .deploy_template
+  environment: prod_us
+  variables: *prod_us_variables
+  only:
+    refs:
+      - branches
+    variables:
+      - $CI_BUILD_REF_NAME == "release"
+  # keep prod deployments as manual actions
+  when: manual
+
+# deploy:prod_ca:
+#   extends: .deploy_template
+#   environment: prod_ca
+#   variables: *prod_ca_variables
+#   only:
+#     refs:
+#       - branches
+#     variables:
+#       - $CI_BUILD_REF_NAME == "release"
+#   # keep prod deployments as manual actions
+#   when: manual
+
+# deploy:prod_uk:
+#   extends: .deploy_template
+#   environment: prod_uk
+#   variables: *prod_uk_variables
+#   only:
+#     refs:
+#       - branches
+#     variables:
+#       - $CI_BUILD_REF_NAME == "release"
+#   # keep prod deployments as manual actions
+#   when: manual
+
+# ---------------------------------------------------------------------------
+# Verify Section:
+# This section will be used in the future for *post-deployment* testing:
+# - endpoint tests
+# - integration tests (likely a subset of endpoint tests)
+# - canary tests (likely a subset of endpoint tests)
+# References:
+# http://softwaretestingfundamentals.com/verification-vs-validation/
+# ---------------------------------------------------------------------------

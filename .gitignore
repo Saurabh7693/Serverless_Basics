@@ -1,0 +1,21 @@
+# package directories
+node_modules
+
+# Env Files
+*.env
+
+# Build Output
+.webpack
+.serverless
+
+# Test Directories
+coverage
+
+# Log Files
+*.log
+
+# OS Specific
+.DS_Store
+
+# Code editor
+.idea/

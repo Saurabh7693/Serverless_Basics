@@ -1,0 +1,114 @@
+service:
+  name: code-challenges
+
+frameworkVersion: ">=1.0.0 <2.0.0"
+
+package:
+  individually: true
+  include:
+    - src/**/*.js
+    - src/**/*.map.js
+  exclude:
+    - src/**/*.test.js
+    - src/**/*.spec.js
+    - node_modules/aws-sdk/**
+    - coverage/**
+
+plugins:
+  - serverless-webpack
+  - serverless-jest-plugin
+  - serverless-domain-manager
+  - serverless-offline
+  - '@passportinc/serverless-tidy-package-plugin'
+
+custom:
+  apiVersion: v1
+  webpack:
+    includeModules:
+      forceExclude:
+        - aws-sdk
+  local:
+    LOG_LEVEL: ${env:LOG_LEVEL, 'debug'}
+    LOG_FILTER: ${env:LOG_FILTER, ''}
+    LOG_FORMAT: ${env:LOG_FORMAT, 'pretty'}
+    LOG_NAMESPACES: ${env:LOG_NAMESPACES, ''}
+    pathPrefix: code-challenges
+    stage: local
+    enableDomain: false
+  dev:
+    LOG_LEVEL: ${env:LOG_LEVEL, 'verbose'}
+    stage: dev
+    enableDomain: true
+  staging:
+    LOG_LEVEL: verbose
+    stage: staging
+    enableDomain: true
+  prod_us:
+    LOG_LEVEL: info
+    stage: prod
+    enableDomain: true
+  region: ${opt:region}
+  stage: ${self:custom.${opt:target}.stage}
+  customDomain:
+    enabled: false
+    domainName: ${cf:apigateway-core.ProxyApiV1SharedDomain}
+    basePath: code-challenges
+    stage: ${self:custom.stage}
+    createRoute53Record: false
+  tidyPackage:
+    preset: aggressive
+    output: info
+    exclude:
+      - node_modules/source-map/dist/**
+      - node_modules/validatorjs/spec/**
+      - node_modules/validatorjs/dist/**
+
+provider:
+  name: aws
+  runtime: ${env:NODE_RUNTIME, 'nodejs8.10'}
+  region: ${opt:region}
+  endpointType: regional
+  memorySize: 256
+  timeout: 29
+  role: ${cf:iam-common.DefaultSharedSvcRoleArn}
+  profile: node
+  stage: ${self:custom.stage}
+  deploymentBucket:
+    name: passportlabs-${self:custom.stage}-continuous-delivery
+    serverSideEncryption: AES256
+  environment:
+    STAGE: ${self:custom.stage}
+    PROVIDER: ${self:provider.name}
+    PATH_PREFIX: ${self:custom.${self:custom.stage}.PATH_PREFIX, ''}
+    LOG_LEVEL: ${self:custom.${self:custom.stage}.LOG_LEVEL, 'info'}
+    LOG_FILTER: ${self:custom.${self:custom.stage}.LOG_FILTER, ''}
+    LOG_FORMAT: ${self:custom.${self:custom.stage}.LOG_FORMAT, 'json'}
+    LOG_NAMESPACES: ${self:custom.${self:custom.stage}.LOG_NAMESPACES, ''}
+  tags:
+    service: ${self:service}
+    team: Cobalt
+    lead: Jason Ehmke
+
+functions:
+  code-challenges:
+    handler: src/functions/api/index.app
+    name: ${self:custom.apiVersion}-${self:service}-api
+    events:
+      - http:
+          path: ${self:custom.${opt:target}.pathPrefix}
+          method: post
+          cors: true
+      - http:
+          path: ${self:custom.${opt:target}.pathPrefix}
+          method: get
+          cors: true
+
+resources:
+  # This is used to override the default naming conventions
+  Resources:
+    ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: ${self:custom.apiVersion}-${self:service}
+
+

@@ -1,0 +1,184 @@
+{
+  "action": "candidate_stage_change",
+  "payload": {
+    "application": {
+      "id": 23436252002,
+      "rejected_at": null,
+      "prospect": false,
+      "status": "active",
+      "applied_at": "2019-04-26T19:51:39Z",
+      "last_activity_at": "2019-04-26T19:52:50Z",
+      "url": "https://app2.greenhouse.io/people/20834100002?application_id=23436252002",
+      "source": {
+        "id": 4000015002,
+        "name": "Jobs page on your website"
+      },
+      "credited_to": {
+        "id": 4128074002,
+        "email": "nick.hernandez@passportinc.com",
+        "employee_id": null,
+        "name": "Nick Hernandez"
+      },
+      "rejection_reason": null,
+      "rejection_details": null,
+      "current_stage": {
+        "id": 4774887002,
+        "name": "Screen (People Ops)",
+        "interviews": [
+          {
+            "id": 5211176002,
+            "name": "Preliminary Screening",
+            "status": "to_be_scheduled",
+            "interview_kit": {
+              "url": "https://app2.greenhouse.io/guides/5211178002/people/20834100002?application_id=23436252002",
+              "content": "<h5>Purpose</h5>\n<ul>\n<li>High-level screening call to make sure the candidate meets the basic requirements</li>\n</ul>\n<h5>Sample Questions</h5>\n<ul>\n<li><span style=\"font-size: 13px;\">Explain the company and the job to the candidate: is it what he/she is looking for?</span></li>\n<li>Walk through his/her resume &ndash; are there any red flags?</li>\n<li><span style=\"font-size: 13px;\">Find out what the candidate is looking for in his/her ideal role. Write this down so you can refer to this later!</span></li>\n<li><span style=\"font-size: 13px;\">Get the candidate's desired salary range: is it in line with the compensation package?</span></li>\n<li><span style=\"font-size: 13px;\">Tell the candidate what to expect next in your process</span></li>\n</ul>\n<p><!--EndFragment--></p>",
+              "questions": []
+            },
+            "interviewers": []
+          }
+        ]
+      },
+      "prospect_detail": {
+        "prospect_pool": null,
+        "prospect_stage": null,
+        "prospect_owner": null
+      },
+      "candidate": {
+        "id": 20834100002,
+        "first_name": "Nick",
+        "last_name": "Tester 2",
+        "title": null,
+        "company": null,
+        "is_private": false,
+        "can_email": true,
+        "created_at": "2019-04-26T19:51:39Z",
+        "external_id": null,
+        "photo_url": null,
+        "url": "https://app2.greenhouse.io/people/20834100002",
+        "phone_numbers": [],
+        "email_addresses": [
+          {
+            "value": "nhernan992@aol.com",
+            "type": "personal"
+          }
+        ],
+        "addresses": [],
+        "website_addresses": [],
+        "social_media_addresses": [],
+        "educations": [],
+        "employments": [],
+        "recruiter": {
+          "id": 4130162002,
+          "email": "teryn.roberts@passportinc.com",
+          "employee_id": null,
+          "name": "Teryn Roberts"
+        },
+        "coordinator": {
+          "id": 4299277002,
+          "email": "alyssa_buchanan@passportinc.com",
+          "employee_id": null,
+          "name": "Alyssa Buchanan"
+        },
+        "attachments": [],
+        "tags": [],
+        "custom_fields": {
+          "git_hub_user_name": {
+            "name": "GitHub User Name",
+            "type": "short_text",
+            "value": "Ehmke is a wicked cool name"
+          }
+        }
+      },
+      "jobs": [
+        {
+          "id": 4105508002,
+          "name": "Software Engineer",
+          "requisition_id": "67",
+          "notes": "<p>Changing from 5 to 2 openings. There is one ever green posting and 1 backfill.</p>",
+          "job_post_id": 4123982002,
+          "status": "open",
+          "created_at": "2018-11-16T14:40:14Z",
+          "opened_at": "2018-12-18T22:14:50Z",
+          "closed_at": null,
+          "url": "https://app2.greenhouse.io/sdash/4105508002",
+          "departments": [
+            {
+              "id": 4008920002,
+              "name": "Engineering",
+              "external_id": null
+            }
+          ],
+          "offices": [
+            {
+              "id": 4004966002,
+              "name": "Charlotte, NC",
+              "location": "Charlotte, North Carolina, United States",
+              "external_id": null
+            }
+          ],
+          "hiring_team": {
+            "hiring_managers": [
+              {
+                "user_id": 4142892002,
+                "employee_id": null
+              }
+            ],
+            "sourcers": [],
+            "recruiters": [
+              {
+                "user_id": 4130162002,
+                "employee_id": null
+              }
+            ],
+            "coordinators": [
+              {
+                "user_id": 4299277002,
+                "employee_id": null
+              }
+            ]
+          },
+          "custom_fields": {
+            "bonus_1": {
+              "name": "Bonus",
+              "type": "number",
+              "value": "15.0"
+            },
+            "employment_type": {
+              "name": "Employment Type",
+              "type": "single_select",
+              "value": "Full-time"
+            },
+            "hiring_manager": {
+              "name": "Hiring Manager",
+              "type": "user",
+              "value": {
+                "user_id": 4142892002,
+                "name": "Duncan Mapes",
+                "email": "duncan.mapes@passportinc.com"
+              }
+            },
+            "net_growth": {
+              "name": "Net Growth",
+              "type": "single_select",
+              "value": "New Position"
+            },
+            "salary": {
+              "name": "Salary Range",
+              "type": "currency_range",
+              "value": {
+                "unit": null,
+                "min_value": "55000.0",
+                "max_value": "125000.0"
+              }
+            },
+            "shares": {
+              "name": "Shares",
+              "type": "number",
+              "value": "100.0"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
