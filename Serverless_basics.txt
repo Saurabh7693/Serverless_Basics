@@ -1,0 +1,23 @@
+Serverless Basics:
+
+Usefull links:
+-- https://serverless.com/framework/docs/providers/aws/guide/intro/
+-- https://serverless.com/blog/serverless-express-rest-api/
+-- https://serverless.com/framework/docs/providers/aws/cli-reference/invoke-local/
+-- https://www.youtube.com/watch?v=3U3OZYXUhuI&list=PLIIjEI2fYC-C3NJF7a4-Cvh5hjdCmrVmN&index=3
+
+
+-- Create a service:
+To create a service, use the create command. You must also pass in a runtime (e.g., node.js, python etc.) you would like to write the service in.
+You can also pass in a path to create a directory and auto-name your service:
+
+# Create service with nodeJS template in the folder ./myService
+serverless create --template aws-nodejs --path myService --name nameOfService
+
+
+-- We can use test the functions locally using: serverless invoke local --function command.
+-- To deploy a function as a lambda function to aws account: serverless deploy #this will deploy all the js files in the current directory as a lambda
+function.
+
+-- lambda functions do not have endpoint of their own and thus we use api gateways for it.
+--
