@@ -1,0 +1,44 @@
+Project Info:
+
+Links:
+-- https://gitlab.pdev.io/jason.ehmke/code-challenge-repos
+
+-- https://developers.greenhouse.io/webhooks.html#introduction
+
+-- https://serverless.com/framework/docs/providers/aws/guide/
+
+-- https://passport.atlassian.net/wiki/spaces/ENGINEERING/pages/695992325/API+Design+Guidelines
+
+-- https://trello.com/invite/b/TATmlpwY/d5d30d6b4a83344657e28e77f83395a9/code-challenge-repo
+
+#Github api:
+-- https://stackoverflow.com/questions/28385884/how-to-create-repository-in-github-through-github-api
+-- https://www.youtube.com/watch?v=x2fd8HHk5xM
+
+
+Questions:
+-- How to create a access token for a organization account in github?
+-- Also how to do that through github api?
+-- Do we have to anything after the candidate completes the code challenge? Like trigger a webhook call to greenhouse or will it end the challenge
+in greenhouse? -- Commit is an event that can trigger a webhook call
+
+-- What do applications do on github, how to create them and can I use them for greenhouse?
+-- Is there timer based access tokens on github?
+
+-- Does the passport aws account have unlimited private rep feature? what type of account is it?
+
+
+-- repos based webhooks are there in github
+
+
+To Do's:
+
+
+-- eslint is just used to clean the code's syntaxtic format and all.
+-- babel:
+Babel is a toolchain that is mainly used to convert ECMAScript 2015+ code into a backwards compatible version of JavaScript
+in current and older browsers or environments. Here are the main things Babel can do for you:
+
+Transform syntax
+Polyfill features that are missing in your target environment (through @babel/polyfill)
+Source code transformations (codemods)
