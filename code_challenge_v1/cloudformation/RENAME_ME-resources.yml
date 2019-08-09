@@ -1,0 +1,75 @@
+---
+
+# ---- Notes ----
+# This file should contain persistent resources for your microservice such as
+# DynamoDB tables, S3 buckets, and maybe SNS topics, and SQS queues.
+#
+# We use this file because we've run into circumstances where serverless.com got
+# its output CloudFormation tangled up and stack updates were not working.  The
+# only simple fix was to delete the stack and recreate it.  In that situation we
+# would not want to delete persistent resources.  Separation of storage and
+# compute is also generally a best practice.
+
+# ---- Instructions ----
+# Search this file for "CHANGE_ME" and adjust as needed
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CHANGE_ME Resources
+
+Parameters:
+  # Specifying parameters with the same Default and AllowedValues
+  # is a workaround to define constants in CloudFormation
+  ServiceName:
+    Type: String
+    Default: CHANGE_ME
+    AllowedValues:
+      - CHANGE_ME
+
+Mappings:
+  AccountParameterMap:
+    Environment:
+      "549672058480": "mgmt"     # passportlabs-mgmt
+      "402285057840": "prod"     # passportlabs-prod
+      "541502230777": "staging"  # passportlabs-staging
+      "966624115095": "qa"       # passportlabs-qa
+      "257648066641": "dev"      # passportlabs-dev
+
+Resources:
+  DynamoDBTable0:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub "${ServiceName}"
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      # CHANGE_ME: You will almost certainly want to update the table schema below
+      AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        - AttributeName: "name"
+          AttributeType: "S"
+        - AttributeName: "created_at"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        - IndexName: "name-index"
+          KeySchema:
+          - AttributeName: "name"
+            KeyType: "HASH"
+          - AttributeName: "created_at"
+            KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+      Tags:
+        - Key: passport.owner
+          Value: CHANGE_ME      # use your chemical team name, all lower case
+
+Outputs:
+  DynamoDBTable0Name:
+    Value: !Ref DynamoDBTable0
+  DynamoDBTable0Arn:
+    Value: !GetAtt DynamoDBTable0.Arn
+

@@ -1,0 +1,77 @@
+{
+  "name": "passport-serverless-api-boilerplate",
+  "version": "0.0.0",
+  "description": "A boilerplate microservice that can be used as a starting point for serverless APIs",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "build": "npm run clean && npm run sls package --",
+    "clean": "rm -rf ./.webpack",
+    "clean:npm": "rm -rf ./node_modules && npm install",
+    "lint": "npx eslint ./src --fix --max-warnings 0",
+    "lint:gitlab-ci": "npx gitlab-ci-lint --url https://gitlab.pdev.io",
+    "open:coverage": "open ./coverage/lcov-report/index.html",
+    "sls": "npx serverless",
+    "start": "AWS_PROFILE=node IS_OFFLINE=true npx serverless offline start --noAuth=true --target=local --region=us-east-1 --location=.webpack/service --dontPrintOutput",
+    "test": "IS_OFFLINE=true NODE_ENV=test npx jest",
+    "test:watch": "npm run test -- --watch",
+    "test:cover": "npm run test -- --coverage"
+  },
+  "dependencies": {
+    "@passportinc/dynomite": "^4.1.4",
+    "@passportinc/funyan": "^2.0.0",
+    "@passportinc/serverless-http-stack": "^6.1.2",
+    "bluebird": "^3.5.4",
+    "dotenv": "^8.0.0",
+    "lodash": "^4.17.11",
+    "source-map-support": "^0.5.12"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.4",
+    "@babel/preset-env": "^7.4.4",
+    "@passportinc/eslint-config-passport": "^0.0.5",
+    "@passportinc/serverless-tidy-package-plugin": "^1.0.2",
+    "aws-sdk": "2.450.0",
+    "babel-loader": "^8.0.5",
+    "babel-plugin-source-map-support": "^2.0.1",
+    "babel-plugin-transform-promise-to-bluebird": "^2.0.0",
+    "eslint": "^5.16.0",
+    "eslint-plugin-import": "^2.17.2",
+    "eslint-plugin-jsx-a11y": "^6.2.1",
+    "eslint-plugin-react": "^7.13.0",
+    "gitlab-ci-lint": "^1.0.0",
+    "jest": "^24.8.0",
+    "serverless": "~1.41.1",
+    "serverless-domain-manager": "^3.2.1",
+    "serverless-jest-plugin": "^0.2.1",
+    "serverless-offline": "^4.10.0",
+    "serverless-webpack": "^5.3.1",
+    "sinon": "^7.3.2",
+    "webpack": "^4.30.0",
+    "webpack-node-externals": "^1.7.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageReporters": [
+      "json",
+      "lcov",
+      "text",
+      "text-summary"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 95,
+        "functions": 95,
+        "lines": 95,
+        "statements": 95
+      }
+    },
+    "transform": {
+      "^.+\\.(js|jsx)$": "<rootDir>/node_modules/babel-jest"
+    }
+  }
+}

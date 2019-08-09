@@ -1,0 +1,3 @@
+{
+  "extends": "@passportinc/eslint-config-passport"
+}

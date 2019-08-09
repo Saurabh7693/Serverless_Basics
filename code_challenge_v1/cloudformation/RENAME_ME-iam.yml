@@ -1,0 +1,195 @@
+---
+
+# ---- Notes ----
+# This file is optional since all products have their own shared IAM role that can be used;
+# however; it is *strongly* recommended to use an IAM role per microservice.
+#
+# It's not included in the CI process because the GitLab runners don't have privileges to update IAM.
+# A DevOps Engineer must run this by hand in each environment due to MFA requirements.
+
+AWSTemplateFormatVersion: !!str 2010-09-09
+Description: CHANGE_ME IAM Resources
+
+# ---- Dependencies ----
+
+# ---- Instructions ----
+# This stack will not be run by CI/CD due to security concerns of giving CI/CD runners IAM Admin access.
+# Search this file for "CHANGE_ME" and adjust as needed
+
+Parameters:
+  # Specifying parameters with the same Default and AllowedValues
+  # is a workaround to define constants in CloudFormation
+  ServiceName:
+    Type: String
+    Default: "CHANGE_ME"
+    AllowedValues:
+      - "CHANGE_ME"
+
+Mappings:
+  AccountParameterMap:
+    AccountId:
+      "mgmt":    "549672058480"  # passportlabs-mgmt
+      "prod":    "402285057840"  # passportlabs-prod
+      "staging": "541502230777"  # passportlabs-staging
+      "dev":     "257648066641"  # passportlabs-dev
+    Environment:
+      "549672058480": "mgmt"     # passportlabs-mgmt
+      "402285057840": "prod"     # passportlabs-prod
+      "541502230777": "staging"  # passportlabs-staging
+      "257648066641": "dev"      # passportlabs-dev
+
+Conditions:
+  IsMgmtAcct: !Equals
+    - !FindInMap [AccountParameterMap, "AccountId", "mgmt"]
+    - !Ref "AWS::AccountId"
+
+Resources:
+  ServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "passport-svc-${ServiceName}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          # Let authorized people assume the service role for debugging/support
+          - Sid: "passportlabsRoot"
+            Effect: Allow
+            Principal:
+              AWS:
+                # passportlabs-mgmt
+                - !Join
+                  - ""
+                  - - "arn:aws:iam::"
+                    - !FindInMap [AccountParameterMap, AccountId, "mgmt"]
+                    - ":root"
+                # passportlabs-${self}
+                - !If
+                  - IsMgmtAcct
+                  - !Ref "AWS::NoValue"
+                  - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - sts:AssumeRole
+          - Sid: "lambda"
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/job-function/ViewOnlyAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Policies:
+        # IAM Denys take precedence over Allows.  This allows us to safely use
+        # "dynamodb:*" in the Allow policy rather than list all of the individual
+        # safe actions explicitly
+        - PolicyName: "Resources.Deny"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: DynamoDbDeny
+                Effect: Deny
+                Action:
+                  - "dynamodb:CreateGlobalTable"
+                  # May need to allow create table w/ naming constraints
+                  - "dynamodb:CreateTable"
+                  - "dynamodb:DeleteBackup"
+                  - "dynamodb:DeleteTable"
+                  - "dynamodb:PurchaseReservedCapacityOfferings"
+                  - "dynamodb:UpdateContinuousBackups"
+                  # Not sure if tagging should be universally disabled
+                  - "dynamodb:TagResource"
+                  - "dynamodb:UntagResource"
+                  - "dynamodb:UpdateContinuousBackups"
+                  - "dynamodb:UpdateGlobalTable"
+                  - "dynamodb:UpdateGlobalTableSettings"
+                Resource:
+                  - "*"
+        - PolicyName: "Resources.Allow"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: CloudwatchLogs
+                Effect: Allow
+                Action:
+                  - "logs:PutLogEvents"
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                Resource:
+                  - "*"
+              - Sid: DynamoDb
+                Effect: Allow
+                Action:
+                  - "dynamodb:*"
+                Resource:
+                  - !Sub "arn:*:dynamodb:*:${AWS::AccountId}:table/${ServiceName}"
+                  - !Sub "arn:*:dynamodb:*:${AWS::AccountId}:table/${ServiceName}/*"
+                  - !Sub "arn:*:dynamodb:*:${AWS::AccountId}:table/${ServiceName}-*"
+              - Sid: Lambda
+                Effect: Allow
+                Action:
+                  - "lambda:AddPermission"
+                  - "lambda:RemovePermission"
+                Resource:
+                  - !Sub "arn:*:lambda:*:${AWS::AccountId}:function:${ServiceName}-*"
+                  - !Sub "arn:*:lambda:*:${AWS::AccountId}:function:v?-${ServiceName}-*"
+              - Sid: S3
+                Effect: Allow
+                Action:
+                  - "s3:AbortMultipartUpload"
+                  # - "s3:DeleteObject"         # CHANGE_ME: uncomment only if needed
+                  - "s3:GetBucketLocation"
+                  - "s3:GetBucketTagging"
+                  - "s3:GetBucketWebsite"
+                  - "s3:GetObject*"
+                  - "s3:ListBucket"
+                  - "s3:ListBucketMultipartUploads"
+                  - "s3:ListMultipartUploadParts"
+                  - "s3:PutObject"
+                  - "s3:PutObjectAcl"
+                  - "s3:PutObjectTagging"
+                Resource:
+                  - !Join
+                    - '-'
+                    - - "arn:aws:s3:::passportlabs"
+                      - !FindInMap [AccountParameterMap, "Environment", !Ref "AWS::AccountId"]
+                      - !Sub "${ServiceName}"
+                  - !Join
+                    - '-'
+                    - - "arn:aws:s3:::passportlabs"
+                      - !FindInMap [AccountParameterMap, "Environment", !Ref "AWS::AccountId"]
+                      - !Sub "${ServiceName}-*"
+              - Sid: SSMParameters
+                Effect: Allow
+                Action:
+                  - "ssm:GetParameter"
+                  - "ssm:GetParameters"
+                  - "ssm:GetParametersByPath"
+                Resource:
+                  - !Sub "arn:*:ssm:*:${AWS::AccountId}:parameter/passport/shared"
+                  - !Sub "arn:*:ssm:*:${AWS::AccountId}:parameter/passport/shared/*"
+                  # CHANGE_ME: change "VERTICAL" in the two lines below
+                  - !Sub "arn:*:ssm:*:${AWS::AccountId}:parameter/VERTICAL/${ServiceName}"
+                  - !Sub "arn:*:ssm:*:${AWS::AccountId}:parameter/VERTICAL/${ServiceName}/*"
+
+  # Lets us reference the Role instead of constructing the ARN
+  ServiceRoleIamAllowPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: "IAM.Allow"
+      Roles:
+        - !Ref ServiceRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: IamPassRole
+            Effect: Allow
+            Action:
+              - "iam:PassRole"
+            Resource:
+              - !GetAtt ServiceRole.Arn
+
+Outputs:
+  ServiceRole:
+    Value: !Ref ServiceRole
+  ServiceRoleArn:
+    Value: !GetAtt ServiceRole.Arn
